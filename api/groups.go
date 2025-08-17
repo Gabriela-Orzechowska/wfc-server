@@ -1,11 +1,11 @@
 package api
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"net/http"
 	"net/url"
 	"strconv"
-    "encoding/binary"
 	"wwfc/qr2"
 )
 
@@ -42,15 +42,35 @@ func HandleGroups(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandlePlayerCount(w http.ResponseWriter, r *http.Request) {
-	servers := qr2.GetSessionServers()
+	u, err := url.Parse(r.URL.String())
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	query, err := url.ParseQuery(u.RawQuery)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	groups := qr2.GetGroups(query["game"], query["id"], true)
+
 
     var players int = 0
 
-	for _, server := range servers {
-		if server["+joinindex"] != "" {
-			players += 1
+	if len(groups) == 0 {
+		players = 0
+	} else {
+		for _, group := range groups {
+			if group.MatchType == "private" {
+				continue
+			}
+			players += len(group.Players)
 		}
 	}
+
+
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Length", "4")
