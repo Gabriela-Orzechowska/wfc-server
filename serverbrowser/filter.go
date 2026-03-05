@@ -34,7 +34,7 @@ func filterServers(moduleName string, servers []map[string]string, queryGame str
 			continue
 		}
 
-		if server["dwc_mver"] == "90" && (server["dwc_hoststate"] != "0" && server["dwc_hoststate"] != "2") {
+		if (server["dwc_mver"] == "90" || server["dwc_mver"] == "91") && (server["dwc_hoststate"] != "0" && server["dwc_hoststate"] != "2") {
 			continue
 		}
 
@@ -51,6 +51,8 @@ func filterServers(moduleName string, servers []map[string]string, queryGame str
 
 	if len(filtered) != 0 {
 		logging.Info(moduleName, "Matched", aurora.BrightCyan(len(filtered)), "servers")
+	} else {
+		logging.Info(moduleName, "Failed to match", aurora.BrightCyan(len(servers)), "servers")
 	}
 
 	return filtered
@@ -60,6 +62,8 @@ func filterSelfLookup(moduleName string, servers []map[string]string, queryGame 
 	var filtered []map[string]string
 
 	// Search for where the profile ID matches
+
+	logging.Error(moduleName, "Checking", aurora.Cyan(len(servers)), "servers")
 	for _, server := range servers {
 		if server["gamename"] != queryGame {
 			continue

@@ -178,6 +178,11 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
         return
     }
 
+    if r.URL.Path == "/api/verify-v3" {
+        api.HandleVerifyV3(w, r)
+        return
+    }
+
 	logging.Info("NAS", aurora.Yellow(r.Method), aurora.Cyan(r.URL), "via", aurora.Cyan(r.Host), "from", aurora.BrightCyan(r.RemoteAddr))
 	replyHTTPError(w, 404, "404 Not Found")
 }

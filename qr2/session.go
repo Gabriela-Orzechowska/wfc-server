@@ -176,6 +176,7 @@ func setSessionData(moduleName string, addr net.Addr, sessionId uint32, payload 
 // Returns false if the profile ID is invalid.
 // Expects the global mutex to already be locked.
 func (session *Session) setProfileID(moduleName string, newPID string, gpcmIP string) bool {
+	logging.Error(moduleName, "Setting profile ID", newPID, gpcmIP)
 	if oldPID, oldPIDValid := session.Data["dwc_pid"]; oldPIDValid && oldPID != "" {
 		if newPID != oldPID {
 			logging.Error(moduleName, "New dwc_pid mismatch: new:", aurora.Cyan(newPID), "old:", aurora.Cyan(oldPID))

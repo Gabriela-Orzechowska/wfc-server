@@ -30,6 +30,7 @@ func printHex(data []byte) string {
 
 func SendClientMessage(senderIP string, destSearchID uint64, message []byte) {
 	moduleName := "QR2/MSG"
+	logging.Info(moduleName, "Sending Client Message")
 
 	var matchData common.MatchCommandData
 	var sender *Session

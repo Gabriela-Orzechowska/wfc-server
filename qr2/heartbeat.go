@@ -12,6 +12,7 @@ import (
 )
 
 func heartbeat(moduleName string, conn net.PacketConn, addr net.UDPAddr, buffer []byte) {
+	logging.Info(moduleName, "Heartbeat")
 	sessionId := binary.BigEndian.Uint32(buffer[1:5])
 	values := strings.Split(string(buffer[5:]), "\u0000")
 
