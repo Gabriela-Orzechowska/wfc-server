@@ -52,7 +52,7 @@ func handleAuthRequest(moduleName string, w http.ResponseWriter, r *http.Request
 		}
 
 		var value string
-		if !strings.HasPrefix(key, "_") {
+		if !strings.HasPrefix(key, "_") && key != "cosmostoken" {
 			parsed, err := common.Base64DwcEncoding.DecodeString(values[0])
 			if err != nil {
 				logging.Error(moduleName, "Invalid POST form value:", aurora.Cyan(key).String()+":", aurora.Cyan(values[0]))
@@ -269,6 +269,18 @@ func login(moduleName string, fields map[string]string, isLocalhost bool) map[st
 		if hasProfaneName, _ = IsBadWord(ingamesn); hasProfaneName {
 			logging.Info(moduleName, aurora.Cyan(strconv.FormatUint(userId, 10)), "has a profane name ("+aurora.Red(ingamesn).String()+")")
 		}
+	}
+
+	cosmostoken, ok := fields["cosmostoken"]
+	if !ok {
+		logging.Error(moduleName, "Missing token")
+		param["returncd"] = "103"
+		return param
+	}
+
+	resp, err := http.Get(fmt.Sprintf("http://localhost:5002/token/is-valid?token=%s", cosmostoken))
+	if err != nil || resp.StatusCode != 200 {
+		logging.Error(moduleName, "Error verifying token")
 	}
 
 	var authToken, challenge string
