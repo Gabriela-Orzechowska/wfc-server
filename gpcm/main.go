@@ -253,6 +253,9 @@ func HandlePacket(index uint64, data []byte) {
 	commands = session.handleCommand("bm", commands, session.bestieMessage)
 	commands = session.handleCommand("getprofile", commands, session.getProfile)
 
+	// Aurora special
+	commands = session.handleCommand("a_playercount", commands, session.handlePlayerCount)
+
 	for _, command := range commands {
 		logging.Error(session.ModuleName, "Unknown command:", aurora.Cyan(command))
 	}
