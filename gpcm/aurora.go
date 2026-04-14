@@ -18,7 +18,7 @@ func (g *GameSpySession) handlePlayerCount(command common.GameSpyCommand) {
 	}
 
 	message := common.CreateGameSpyMessage(common.GameSpyCommand{
-		Command:      "a_playercount",
+		Command:      "a_pc",
 		CommandValue: strconv.FormatInt(int64(players), 10),
 	})
 	g.WriteBuffer += message
