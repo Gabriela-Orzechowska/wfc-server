@@ -5,10 +5,16 @@ import (
 	"wwfc/common"
 )
 
+const (
+	GetLastIGN = `SELECT last_ingamesn FROM users WHERE profile_id = $1`
+)
+
 func kickPlayer(profileID uint32, reason string) {
 	playerName := ""
 	announce := false
-	isBan := false
+	if reason == "banned" || reason == "restricted" {
+		announce = true
+	}
 
 	if session, exists := sessions[profileID]; exists {
 		playerName = session.InGameName
@@ -17,32 +23,24 @@ func kickPlayer(profileID uint32, reason string) {
 		switch reason {
 		case "banned":
 			errorMessage = WWFCMsgProfileBannedTOSNow
-			announce = true
-			isBan = true
 
 		case "restricted":
 			errorMessage = WWFCMsgProfileRestrictedNow
-			announce = true
-			isBan = true
 
 		case "restricted_join":
 			errorMessage = WWFCMsgProfileRestricted
 
 		case "moderator_kick":
 			errorMessage = WWFCMsgKickedModerator
-			announce = true
-			isBan = true
 
 		case "room_kick":
 			errorMessage = WWFCMsgKickedRoomHost
-			announce = true
 
 		case "invalid_elo":
 			errorMessage = WWFCMsgInvalidELO
 
 		case "too_many_frames_dropped":
 			errorMessage = WWFCMsgTooManyFramesDropped
-			announce = true
 
 		case "network_error":
 			// No error message
@@ -62,11 +60,19 @@ func kickPlayer(profileID uint32, reason string) {
 		return
 	}
 
+	if playerName == "" {
+		// Get Last IGN
+		err := pool.QueryRow(ctx, GetLastIGN, profileID).Scan(&playerName)
+		if err != nil {
+			return
+		}
+	}
+
 	message := common.CreateGameSpyMessage(common.GameSpyCommand{
 		Command:      "a_kick",
 		CommandValue: strconv.FormatInt(int64(profileID), 10),
 		OtherValues: map[string]string{
-			"ban":  strconv.FormatBool(isBan),
+			"ban":  strconv.FormatBool(true),
 			"name": playerName,
 		},
 	})
