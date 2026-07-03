@@ -271,17 +271,19 @@ func login(moduleName string, fields map[string]string, isLocalhost bool) map[st
 		}
 	}
 
-	cosmostoken, ok := fields["cosmostoken"]
-	if !ok {
-		logging.Error(moduleName, "Missing token")
-		param["returncd"] = "103"
-		return param
-	}
+	/*
+			cosmostoken, ok := fields["cosmostoken"]
+			if !ok {
+				logging.Error(moduleName, "Missing token")
+				param["returncd"] = "103"
+				return param
+			}
 
-	resp, err := http.Get(fmt.Sprintf("http://localhost:5002/token/is-valid?token=%s", cosmostoken))
-	if err != nil || resp.StatusCode != 200 {
-		logging.Error(moduleName, "Error verifying token")
-	}
+		resp, err := http.Get(fmt.Sprintf("http://localhost:5002/token/is-valid?token=%s", cosmostoken))
+		if err != nil || resp.StatusCode != 200 {
+			logging.Error(moduleName, "Error verifying token")
+		}
+	*/
 
 	var authToken, challenge string
 	switch unitcdInt {
