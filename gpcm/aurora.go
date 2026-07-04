@@ -1,11 +1,14 @@
 package gpcm
 
 import (
+	"errors"
 	"strconv"
 	"time"
 	"wwfc/common"
 	"wwfc/logging"
 	"wwfc/qr2"
+
+	"github.com/jackc/pgx/v4"
 )
 
 type OnlineGameData struct {
@@ -16,20 +19,6 @@ type OnlineGameData struct {
 	Id        int
 	IsActive  bool
 }
-
-const (
-	GetGamemode = `
-		SELECT *, $1 >= start_time AND $1 < end_time AS is_active
-		FROM gamemodes WHERE $1 < end_time
-		ORDER BY NOT ($1 >= start_time AND $1 < end_time), start_time ASC LIMIT 1;
-	`
-	CheckInterval = time.Duration(1) * time.Minute
-)
-
-var (
-	lastGamemodeData  OnlineGameData
-	lastGamemodeCheck time.Time
-)
 
 func (g *GameSpySession) handlePlayerCount(command common.GameSpyCommand) {
 	groups := qr2.GetGroups([]string{}, []string{}, false)
@@ -49,6 +38,22 @@ func (g *GameSpySession) handlePlayerCount(command common.GameSpyCommand) {
 	g.WriteBuffer += message
 }
 
+const (
+	GetGamemode = `
+		SELECT *, $1 >= start_time AND $1 < end_time AS is_active
+		FROM gamemodes WHERE $1 < end_time
+		ORDER BY NOT ($1 >= start_time AND $1 < end_time), start_time ASC LIMIT 1;
+	`
+	CheckInterval       = time.Duration(30) * time.Second
+	GamemodeDataVersion = 1
+)
+
+var (
+	lastGamemodeData  OnlineGameData
+	lastGamemodeCheck time.Time
+	hasGamemodeData   bool
+)
+
 func (g *GameSpySession) handleGetGamemode(command common.GameSpyCommand) {
 	timeNow := time.Now().UTC()
 
@@ -63,9 +68,25 @@ func (g *GameSpySession) handleGetGamemode(command common.GameSpyCommand) {
 			&lastGamemodeData.IsActive)
 
 		if err != nil {
-			logging.Error("AUR", "Failed to get gamemode data:", err)
-			return
+			if errors.Is(err, pgx.ErrNoRows) {
+				hasGamemodeData = false
+			} else {
+				logging.Error("AUR", "Failed to get gamemode data:", err)
+				return
+			}
+		} else {
+			hasGamemodeData = true
 		}
+	}
+
+	if !hasGamemodeData {
+		message := common.CreateGameSpyMessage(common.GameSpyCommand{
+			Command:      "a_gm",
+			CommandValue: "none",
+		})
+
+		g.WriteBuffer += message
+		return
 	}
 
 	var (
@@ -87,10 +108,11 @@ func (g *GameSpySession) handleGetGamemode(command common.GameSpyCommand) {
 		Command:      "a_gm",
 		CommandValue: common.Base64DwcEncoding.EncodeToString(lastGamemodeData.Gamedata),
 		OtherValues: map[string]string{
-			"active": strconv.FormatInt(int64(isactive), 10),
-			"name":   lastGamemodeData.Name,
-			"region": strconv.FormatInt(int64(lastGamemodeData.Id+4000), 10),
-			"min":    strconv.FormatInt(int64(minutes), 10),
+			"active":  strconv.FormatInt(int64(isactive), 10),
+			"name":    lastGamemodeData.Name,
+			"region":  strconv.FormatInt(int64(lastGamemodeData.Id+4000), 10),
+			"min":     strconv.FormatInt(int64(minutes+1), 10),
+			"version": strconv.FormatInt(int64(GamemodeDataVersion), 10),
 		},
 	})
 
