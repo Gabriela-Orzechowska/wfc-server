@@ -9,6 +9,8 @@ require (
 	golang.org/x/net v0.23.0
 )
 
+require github.com/gtuk/discordwebhook v1.2.0 // indirect
+
 require (
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.14.3 // indirect

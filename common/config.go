@@ -38,7 +38,8 @@ type Config struct {
 	WiiCertPathDS string `xml:"wiiCertDerPathDS"`
 	KeyPathDS     string `xml:"keyPathDS"`
 
-	APISecret string `xml:"apiSecret"`
+	APISecret     string `xml:"apiSecret"`
+	ReportWebhook string `xml:"reportWebhook"`
 
 	AllowDefaultDolphinKeys bool `xml:"allowDefaultDolphinKeys"`
 

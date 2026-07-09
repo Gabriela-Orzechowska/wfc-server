@@ -2,12 +2,14 @@ package gpcm
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"time"
 	"wwfc/common"
 	"wwfc/logging"
 	"wwfc/qr2"
 
+	"github.com/gtuk/discordwebhook"
 	"github.com/jackc/pgx/v4"
 )
 
@@ -117,4 +119,75 @@ func (g *GameSpySession) handleGetGamemode(command common.GameSpyCommand) {
 	})
 
 	g.WriteBuffer += message
+}
+
+// For webhook
+var (
+	reasonNameMap = map[string]string{
+		"bad_packet": "Bad Packet",
+		"lap_trolling": "Lap Trolling",
+	}
+
+	lastReportTime = map[string]map[string]time.Time{}
+
+	username = "Cosmos WFC Reports"
+
+	wbTitle = "Player Report"
+)
+
+const (
+	ReportInterval = time.Second * 10
+)
+
+func (g *GameSpySession) handleAuroraReport(command common.GameSpyCommand) {
+	reason := command.CommandValue
+	name, ok := reasonNameMap[reason]
+	if !ok {
+		logging.Error(ServerName, "Invalid report command, invalid reason. Got", reason)
+		return
+
+	}
+
+	playerIdS, ok := command.OtherValues["player_id"]
+	if !ok {
+		logging.Error(ServerName, "Invalid report command, missing player_id")
+		return
+	}
+	playerId, err := strconv.Atoi(playerIdS)
+	if err != nil {
+		logging.Error(ServerName, "Invalid report command, invalid player_id. Got", playerIdS)
+		return
+	}
+
+	playerFC := common.CalcFriendCodeString(uint32(playerId), g.User.GsbrCode[:4])
+	reporterFC := common.CalcFriendCodeString(uint32(g.User.ProfileId), g.User.GsbrCode[:4])
+
+	_, ok = lastReportTime[playerFC]
+	if !ok {
+		lastReportTime[playerFC] = make(map[string]time.Time)
+	}
+
+	if time.Now().Sub(lastReportTime[playerFC][reason]) < ReportInterval {
+		return
+	}
+	lastReportTime[playerFC][reason] = time.Now()
+
+	content := fmt.Sprintf("**Reason**: %s\n**Reported User**: %s\n**Reported By**: %s",
+		name, playerFC, reporterFC,
+	)
+
+	embed := discordwebhook.Embed{
+		Title:       &wbTitle,
+		Description: &content,
+	}
+
+	dmessage := discordwebhook.Message{
+		Username: &username,
+		Embeds:   &[]discordwebhook.Embed{embed},
+	}
+
+	err = discordwebhook.SendMessage(common.GetConfig().ReportWebhook, dmessage)
+	if err != nil {
+		logging.Error(ServerName, "Failed to send webhook")
+	}
 }
