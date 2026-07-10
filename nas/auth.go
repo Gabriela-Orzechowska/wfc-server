@@ -266,8 +266,10 @@ func login(moduleName string, fields map[string]string, isLocalhost bool) map[st
 	hasProfaneName := false
 	ingamesn, ok := fields["ingamesn"]
 	if ok {
-		if hasProfaneName, _ = IsBadWord(ingamesn); hasProfaneName {
+		if hasProfaneName, _ = CheckUsernameProfanity(ingamesn); hasProfaneName {
 			logging.Info(moduleName, aurora.Cyan(strconv.FormatUint(userId, 10)), "has a profane name ("+aurora.Red(ingamesn).String()+")")
+			param["returncd"] = "111"
+			return param
 		}
 	}
 
