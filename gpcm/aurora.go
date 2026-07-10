@@ -9,7 +9,6 @@ import (
 	"wwfc/logging"
 	"wwfc/qr2"
 
-	"github.com/gtuk/discordwebhook"
 	"github.com/jackc/pgx/v4"
 )
 
@@ -124,15 +123,11 @@ func (g *GameSpySession) handleGetGamemode(command common.GameSpyCommand) {
 // For webhook
 var (
 	reasonNameMap = map[string]string{
-		"bad_packet": "Bad Packet",
+		"bad_packet":   "Bad Packet",
 		"lap_trolling": "Lap Trolling",
 	}
 
 	lastReportTime = map[string]map[string]time.Time{}
-
-	username = "Cosmos WFC Reports"
-
-	wbTitle = "Player Report"
 )
 
 const (
@@ -175,19 +170,5 @@ func (g *GameSpySession) handleAuroraReport(command common.GameSpyCommand) {
 	content := fmt.Sprintf("**Reason**: %s\n**Reported User**: %s\n**Reported By**: %s",
 		name, playerFC, reporterFC,
 	)
-
-	embed := discordwebhook.Embed{
-		Title:       &wbTitle,
-		Description: &content,
-	}
-
-	dmessage := discordwebhook.Message{
-		Username: &username,
-		Embeds:   &[]discordwebhook.Embed{embed},
-	}
-
-	err = discordwebhook.SendMessage(common.GetConfig().ReportWebhook, dmessage)
-	if err != nil {
-		logging.Error(ServerName, "Failed to send webhook")
-	}
+	common.SendWebhookSimple("Player Report", content)
 }
