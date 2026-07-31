@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 	"wwfc/common"
 	"wwfc/logging"
@@ -124,7 +125,27 @@ func (g *GameSpySession) handleGetGamemode(command common.GameSpyCommand) {
 var (
 	reasonNameMap = map[string]string{
 		"bad_packet":   "Bad Packet",
-		"lap_trolling": "Lap Trolling",
+		"lap_trolling": "Potential Lap Trolling",
+		"item_hack":    "Potential Item Hack",
+	}
+
+	// Matching ItemObjId
+	itemNameMap = map[string]string{
+		"0":  "Green Shell",
+		"1":  "Red Shell",
+		"2":  "Banana",
+		"3":  "Mushroom",
+		"4":  "Star",
+		"5":  "Blue Shell",
+		"6":  "Lighting",
+		"7":  "FIB",
+		"8":  "Mega Mushroom",
+		"9":  "Bob-omb",
+		"10": "Blooper",
+		"11": "POW Block",
+		"12": "Golden Mushroom",
+		"13": "Bullet Bill",
+		"14": "Thunder Cloud",
 	}
 
 	lastReportTime = map[string]map[string]time.Time{}
@@ -170,5 +191,20 @@ func (g *GameSpySession) handleAuroraReport(command common.GameSpyCommand) {
 	content := fmt.Sprintf("**Reason**: %s\n**Reported User**: %s\n**Reported By**: %s",
 		name, playerFC, reporterFC,
 	)
+	if strings.EqualFold(reason, "item_hack") {
+		itemUsed, ok := command.OtherValues["item_type"]
+		if !ok {
+			logging.Error(ServerName, "Invalid report command, missing item_type in item_hack report.")
+			return
+		}
+		itemCount, ok := command.OtherValues["item_count"]
+		if !ok {
+			logging.Error(ServerName, "Invalid report command, missing item_count in item_hack report.")
+			return
+		}
+
+		content = content + fmt.Sprintf("\n**Item used:** %s\n**Total use count**: %s", itemNameMap[itemUsed], itemCount)
+	}
+
 	common.SendWebhookSimple("Player Report", content)
 }
