@@ -126,7 +126,7 @@ var (
 	reasonNameMap = map[string]string{
 		"bad_packet":   "Bad Packet",
 		"lap_trolling": "Potential Lap Trolling",
-		"item_hack":    "Potential Item Hack",
+		// "item_hack":    "Potential Item Hack",
 	}
 
 	// Matching ItemObjId
