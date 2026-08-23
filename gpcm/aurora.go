@@ -47,7 +47,7 @@ const (
 		ORDER BY NOT ($1 >= start_time AND $1 < end_time), start_time ASC LIMIT 1;
 	`
 	CheckInterval       = time.Duration(30) * time.Second
-	GamemodeDataVersion = 1
+	GamemodeDataVersion = 2
 )
 
 var (
