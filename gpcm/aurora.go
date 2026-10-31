@@ -20,6 +20,7 @@ type OnlineGameData struct {
 	EndTime   time.Time
 	Id        int
 	IsActive  bool
+	Custom    bool
 }
 
 func (g *GameSpySession) handlePlayerCount(command common.GameSpyCommand) {
@@ -47,7 +48,7 @@ const (
 		ORDER BY NOT ($1 >= start_time AND $1 < end_time), start_time ASC LIMIT 1;
 	`
 	CheckInterval       = time.Duration(30) * time.Second
-	GamemodeDataVersion = 2
+	GamemodeDataVersion = 3
 )
 
 var (
@@ -67,6 +68,7 @@ func (g *GameSpySession) handleGetGamemode(command common.GameSpyCommand) {
 			&lastGamemodeData.Name,
 			&lastGamemodeData.StartTime,
 			&lastGamemodeData.EndTime,
+			&lastGamemodeData.Custom,
 			&lastGamemodeData.IsActive)
 
 		if err != nil {
@@ -92,18 +94,20 @@ func (g *GameSpySession) handleGetGamemode(command common.GameSpyCommand) {
 	}
 
 	var (
-		isactive int
-		minutes  int
+		minutes int
 	)
 
+	diff := lastGamemodeData.EndTime.Sub(time.Now())
+	minutes = int(diff.Minutes())
+
+	isactive := 0
 	if lastGamemodeData.IsActive {
 		isactive = 1
-		diff := lastGamemodeData.EndTime.Sub(time.Now())
-		minutes = int(diff.Minutes())
-	} else {
-		isactive = 0
-		diff := lastGamemodeData.StartTime.Sub(time.Now())
-		minutes = int(diff.Minutes())
+	}
+
+	iscustom := 0
+	if lastGamemodeData.Custom {
+		iscustom = 1
 	}
 
 	message := common.CreateGameSpyMessage(common.GameSpyCommand{
@@ -115,6 +119,7 @@ func (g *GameSpySession) handleGetGamemode(command common.GameSpyCommand) {
 			"region":  strconv.FormatInt(int64(lastGamemodeData.Id+4000), 10),
 			"min":     strconv.FormatInt(int64(minutes+1), 10),
 			"version": strconv.FormatInt(int64(GamemodeDataVersion), 10),
+			"custom":  strconv.FormatInt(int64(iscustom), 10),
 		},
 	})
 
